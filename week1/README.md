@@ -23,6 +23,10 @@ You can do so by creating a `.vscode/settings.json` file and copying these stuff
 }
 ```
 
-# Tools
+## Tools
 
 `beautifulsoup` is an HTML-parser, but it cannot run Javascript. So it is not the best option for the webpages which have JS. In order to do so you can use `selenium` (some browser automation framework), or `playwright` which is a more modern browser automation framework (by `Microsoft`).
+
+## OpenAI Library
+
+You can use `openai` library not only for accessing **OpenAI** endpoints but also **Google**, and also **Ollama** (e.g. running on your local machine!).
