@@ -30,3 +30,7 @@ You can do so by creating a `.vscode/settings.json` file and copying these stuff
 ## OpenAI Library
 
 You can use `openai` library not only for accessing **OpenAI** endpoints but also **Google**, and also **Ollama** (e.g. running on your local machine!).
+
+## Tokenization
+
+You can use the `tiktoken` package for tokenization of text and converting tokens back to text.
