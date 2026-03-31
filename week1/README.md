@@ -38,3 +38,9 @@ You can use the `tiktoken` package for tokenization of text and converting token
 ## Stateless vs Stateful
 
 Every single prompt we send to an LLM is stateless. We send all the previous messages as well (or possibly a summary of them) to create an illusion of statefullness.
+
+## Context window
+
+that is the maximum number of tokens that a model can consider when generating the next token. It includes the original input prompt, subsequent conversation, the latest input prompt, and almost all the output prompt.
+
+You can check the context siez, input/output cost, latency, etc. in websites like: [venujm.ai](https://vellum.ai/llm-leaderboard).
