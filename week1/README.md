@@ -44,3 +44,7 @@ Every single prompt we send to an LLM is stateless. We send all the previous mes
 that is the maximum number of tokens that a model can consider when generating the next token. It includes the original input prompt, subsequent conversation, the latest input prompt, and almost all the output prompt.
 
 You can check the context siez, input/output cost, latency, etc. in websites like: [venujm.ai](https://vellum.ai/llm-leaderboard).
+
+## Cost optimization
+
+One of the things which is worth knowing is that when you send the same chunk twice to OpenAI GPT models, it may be cheaper, since OpenAI does some caching as well.
