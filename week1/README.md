@@ -69,3 +69,26 @@ def select_relevant_links(url):
 ```
 
 This constrains the response generation at inference time, makes sure the `choices[0]` will not be choses such that it results in an invalid JSON object.
+
+## Stream
+
+You can also set stream to `true`, so that you get chunks of data as a stream and show them one-by-one; there are better ways to do it commercially but still:
+
+```python
+def stream_brochure(company_name, url):
+    stream = openai.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {"role": "system", "content": brochure_system_prompt},
+            {"role": "user", "content": get_brochure_user_prompt(company_name, url)}
+          ],
+        stream=True
+    )
+    response = ""
+    display_handle = display(Markdown(""), display_id=True)
+    for chunk in stream:
+        response += chunk.choices[0].delta.content or ''
+        update_display(Markdown(response), display_id=display_handle.display_id)
+```
+
+This is also showing how the model works under the hood with the token being generated, then fed back to the model, inferred and the same happens to the next token.
