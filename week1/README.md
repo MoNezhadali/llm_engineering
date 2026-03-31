@@ -34,3 +34,7 @@ You can use `openai` library not only for accessing **OpenAI** endpoints but als
 ## Tokenization
 
 You can use the `tiktoken` package for tokenization of text and converting tokens back to text.
+
+## Stateless vs Stateful
+
+Every single prompt we send to an LLM is stateless. We send all the previous messages as well (or possibly a summary of them) to create an illusion of statefullness.
