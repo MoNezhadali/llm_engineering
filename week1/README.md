@@ -48,3 +48,24 @@ You can check the context siez, input/output cost, latency, etc. in websites lik
 ## Cost optimization
 
 One of the things which is worth knowing is that when you send the same chunk twice to OpenAI GPT models, it may be cheaper, since OpenAI does some caching as well.
+
+## Response format
+
+You can choose the response format to be of type JSON, in the OpenAI APIs:
+
+```python
+def select_relevant_links(url):
+    response = openai.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": link_system_prompt},
+            {"role": "user", "content": get_links_user_prompt(url)}
+        ],
+        response_format={"type": "json_object"}
+    )
+    result = response.choices[0].message.content
+    links = json.loads(result)
+    return links
+```
+
+This constrains the response generation at inference time, makes sure the `choices[0]` will not be choses such that it results in an invalid JSON object.
