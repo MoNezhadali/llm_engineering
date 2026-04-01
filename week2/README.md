@@ -14,3 +14,7 @@ You have more than one way to improve the results:
 
 - Improve the model, e.g. use `mini` instead of `nano`.
 - Improve the reasoning effort, e.g. from `minimal` to `low`.
+
+## Groq
+
+**Groq**, which is different from **Grok** of **XAI**, is a platform which runs open-source models which are too large to run on premise. They have optimized their hardware such that inferences are extremely fast.
