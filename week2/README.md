@@ -22,3 +22,11 @@ You have more than one way to improve the results:
 ## LiteLLM
 
 **Langchain** is a heavy abstraction layer on top of LLM libraries. One lightweight alternative is **LiteLLM**. **LiteLLM** gives tools to analyze every single call, e.g. input tokens, output tokens, total tokens, cached tokens, total cost, etc.
+
+## Caching
+
+It is a very cost-saving and important feature of LLMs to use, and it is quite vendor-specific. For example for OpenAI, cache hits only for exact prefix matches, i.e. if you have several questions about some text, it has to go at the beginning of the text. Hence, always provide the static context at the beginning and variables, e.g. questions, at the end.
+
+With Anthropic you have tell you want to prime the cache, then you will pay `25%` more, but when you use those cache you will pay ``10x` less.
+
+Gemini supports both, having both **implicit** and **explicti**.
