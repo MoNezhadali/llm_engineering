@@ -18,3 +18,7 @@ You have more than one way to improve the results:
 ## Groq
 
 **Groq**, which is different from **Grok** of **XAI**, is a platform which runs open-source models which are too large to run on premise. They have optimized their hardware such that inferences are extremely fast.
+
+## LiteLLM
+
+**Langchain** is a heavy abstraction layer on top of LLM libraries. One lightweight alternative is **LiteLLM**. **LiteLLM** gives tools to analyze every single call, e.g. input tokens, output tokens, total tokens, cached tokens, total cost, etc.
