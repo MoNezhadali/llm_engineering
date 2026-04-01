@@ -7,5 +7,10 @@ You can setup your API keys with several different providers (OpenAI, Anthropic,
 You can add an argument called `reasoning_effort`:
 
 ```python
-response = openai.chat.completions.create(model="gpt-5-mini", messages=easy_puzzle, reasoning_effort="minimal")
+response = openai.chat.completions.create(model="gpt-5-nano", messages=easy_puzzle, reasoning_effort="minimal")
 ```
+
+You have more than one way to improve the results:
+
+- Improve the model, e.g. use `mini` instead of `nano`.
+- Improve the reasoning effort, e.g. from `minimal` to `low`.
