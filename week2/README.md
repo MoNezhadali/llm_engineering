@@ -132,3 +132,35 @@ def handle_tool_call(message):
 
 # NOTE: For commercial use, it maybe better to use OpenAI agent SDK instead of handling all these stuff yourself. You can also read OpenAI forum for guides.
 ```
+
+## Other OpenAI APIs
+
+You can use OpenAI images library for creating images:
+
+```python
+def artist(city):
+    image_response = openai.images.generate(
+            model="dall-e-3",
+            prompt=f"An image representing a vacation in {city}, showing tourist spots and everything unique about {city}, in a vibrant pop-art style",
+            size="1024x1024",
+            n=1,
+            response_format="b64_json",
+        )
+    image_base64 = image_response.data[0].b64_json
+    image_data = base64.b64decode(image_base64)
+    return Image.open(BytesIO(image_data))
+```
+
+Or use openAI audio API for creating audios:
+
+```python
+def talker(message):
+    response = openai.audio.speech.create(
+      model="gpt-4o-mini-tts",
+      voice="onyx",    # Also, try replacing onyx with alloy or coral
+      input=message
+    )
+    return response.content
+```
+
+In the day 5 of this week, you can create multi-model products that create text, image and audio.
