@@ -82,3 +82,15 @@ view = gr.Interface(
     )
 view.launch()
 ```
+
+## Create a chotbot
+
+You can use **Gradio** to create a chatbot:
+
+```python
+def chat(message, history):
+    return "bananas"
+
+gr.ChatInterface(fn=chat, type="messages").launch()
+# The type="messages" argument gives the history in OpenAI messages format.
+```
