@@ -59,3 +59,26 @@ def stream_model(prompt, model):
     for chunk in result:
         yield chunk
 ```
+
+## Adding an interface with several different vendors
+
+You can get the input in a textbox, choose model from a dropdown menu, and get the output as markdown like this:
+
+```python
+message_input = gr.Textbox(label="Your message:", info="Enter a message for the LLM", lines=7)
+model_selector = gr.Dropdown(["GPT", "Shout"], label="Select model", value="GPT")
+message_output = gr.Markdown(label="Response:")
+
+view = gr.Interface(
+    fn=stream_model,
+    title="LLMs",
+    inputs=[message_input, model_selector],
+    outputs=[message_output],
+    examples=[
+            ["Explain the Transformer architecture to a layperson", "GPT"],
+            ["Explain the Transformer architecture to an aspiring AI engineer", "Claude"]
+        ],
+    flagging_mode="never"
+    )
+view.launch()
+```
