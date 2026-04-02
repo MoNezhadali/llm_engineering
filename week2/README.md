@@ -30,3 +30,13 @@ It is a very cost-saving and important feature of LLMs to use, and it is quite v
 With Anthropic you have tell you want to prime the cache, then you will pay `25%` more, but when you use those cache you will pay ``10x` less.
 
 Gemini supports both, having both **implicit** and **explicti**.
+
+## User Interface
+
+You can use **Gradio** (or **Streamlit**) to create a user interface for your apps including LLM apps. It is as easy as doing:
+
+```python
+import gradio as gr
+gr.Interface(fn=shout, inputs="textbox", outputs="textbox", flagging_mode="never").launch()
+# where shout is the callback function which takes the input and returns output"
+```
