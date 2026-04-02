@@ -40,3 +40,22 @@ import gradio as gr
 gr.Interface(fn=shout, inputs="textbox", outputs="textbox", flagging_mode="never").launch()
 # where shout is the callback function which takes the input and returns output"
 ```
+
+## Some python trick
+
+```python
+# Given:
+def stream_model(prompt, model):
+    if model=="GPT":
+        result = stream_gpt(prompt)
+    elif model=="Claude":
+        result = stream_claude(prompt)
+    else:
+        raise ValueError("Unknown model")
+    # These two are equivalent
+    # version 1
+    yield from result
+    # version 2
+    for chunk in result:
+        yield chunk
+```
