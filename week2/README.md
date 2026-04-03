@@ -164,3 +164,5 @@ def talker(message):
 ```
 
 In the day 5 of this week, you can create multi-model products that create text, image and audio.
+
+![FlightAgent](TravelAgent.png)
