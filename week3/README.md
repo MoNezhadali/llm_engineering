@@ -22,3 +22,7 @@ print(result)
 # Result
 # [{'label': 'POSITIVE', 'score': 0.9993460774421692}]
 ```
+
+## Specialized models
+
+There are models specifically trained for specific tasks, e.g. summarization, translation, entity recognition, sentiment analysis, classification, image generation, audio generation, etc. and they are open-source, so an option is using them.
