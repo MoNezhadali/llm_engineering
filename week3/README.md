@@ -1,3 +1,9 @@
 # Notes on Week3
 
 HuggingFace is hub for open-source models, datasets (it is the choice hub for transformers, still Keggle is for the other types of models), and Apps (including many built in Gradio)
+
+
+## Diffusion vs. Transformer
+
+Diffusion models are used for generating images. During the training images are transformed into white noise in several steps and the model learns how to create them (in backward steps). During the inference:
+Text → numbers (embeddings) → guide the denoising process → image
