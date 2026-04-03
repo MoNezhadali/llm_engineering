@@ -166,3 +166,7 @@ def talker(message):
 In the day 5 of this week, you can create multi-model products that create text, image and audio.
 
 ![FlightAgent](TravelAgent.png)
+
+## SVG
+
+SVG, Scalable Vector Graphics, is a text-based image format written in XML. Because SVG is text, an LLM can read, write, edit, and reason over it more naturally than over raw pixels. Maybe this is useful for creating ads (by defining the steps and then calling agents to do the corresponding steps, or maybe not but the idea of making it agentic makes sence anyway.)
