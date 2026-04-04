@@ -65,3 +65,38 @@ Quantization is a technique that reduces the numerical precision of model parame
 - Lower power consumption
 
 It can happen on the neural network weights, activations (during inference time), and less often on biases since they accumulate errors stronger.
+
+## Internals of a Pytorch LLM
+
+If you load `Llama3.1-instruct` from huggingface and print its internals, you'll get something like:
+
+```text
+LlamaForCausalLM(
+  (model): LlamaModel(
+    (embed_tokens): Embedding(128256, 4096)
+    (layers): ModuleList(
+      (0-31): 32 x LlamaDecoderLayer(
+        (self_attn): LlamaAttention(
+          (q_proj): Linear4bit(in_features=4096, out_features=4096, bias=False)
+          (k_proj): Linear4bit(in_features=4096, out_features=1024, bias=False)
+          (v_proj): Linear4bit(in_features=4096, out_features=1024, bias=False)
+          (o_proj): Linear4bit(in_features=4096, out_features=4096, bias=False)
+        )
+        (mlp): LlamaMLP(
+          (gate_proj): Linear4bit(in_features=4096, out_features=14336, bias=False)
+          (up_proj): Linear4bit(in_features=4096, out_features=14336, bias=False)
+          (down_proj): Linear4bit(in_features=14336, out_features=4096, bias=False)
+          (act_fn): SiLUActivation()
+        )
+        (input_layernorm): LlamaRMSNorm((4096,), eps=1e-05)
+        (post_attention_layernorm): LlamaRMSNorm((4096,), eps=1e-05)
+      )
+    )
+    (norm): LlamaRMSNorm((4096,), eps=1e-05)
+    (rotary_emb): LlamaRotaryEmbedding()
+  )
+  (lm_head): Linear(in_features=4096, out_features=128256, bias=False)
+)
+```
+
+It starts with `embedding` which projects the tokens from around 128000 dimensions to 4096, then 32 layers of Neural networks, and then `lm_head` which transforms the outputs from the last layer of neural nets and specifies the probability of all the different tokens (around 128000 tokens) to be the next token.
