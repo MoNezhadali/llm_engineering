@@ -56,3 +56,12 @@ print(prompt)
 ```
 
 Different models, e.g. Phi-4 from Microsoft, Deepseek-V3.1, ... and their corresponding tokenizers have different structures after you apply `apply_chat_template`.
+
+## Quantization
+
+Quantization is a technique that reduces the numerical precision of model parameters and computations—typically from 32-bit floating point (FP32) to lower formats like 16-bit (FP16), 8-bit (INT8), or even 4-bit. This saves memory and speeds up computation, at the cost of a little accuracy. It is used for:
+- Faster inference (especially on CPUs and edge devices)
+- Lower memory usage (models become much smaller)
+- Lower power consumption
+
+It can happen on the neural network weights, activations (during inference time), and less often on biases since they accumulate errors stronger.
