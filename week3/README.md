@@ -100,3 +100,5 @@ LlamaForCausalLM(
 ```
 
 It starts with `embedding` which projects the tokens from around 128000 dimensions to 4096, then 32 layers of Neural networks, and then `lm_head` which transforms the outputs from the last layer of neural nets and specifies the probability of all the different tokens (around 128000 tokens) to be the next token.
+
+Note that `embedding` is technically a lookup table. When you give a series of tokens, each becomes a vector of size `4096` in the next step, and the distances show how similar the tokens are. Afterwards they are sent together to the 32 layers of the model, with only later tokens attending to the previous tokens in the architecture of the LLM model. The context window size is just a soft limit put by vendors. There is no hard limit for that.
