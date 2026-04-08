@@ -22,3 +22,15 @@ Pros and cons of Langchain:
 - Significant adoption in the enterprise
 - As APIs for LLMs have matured, converged and simplified, the need for a unifying framework has decreased. Particularly with OpenAI endpoints.
 - Langchain is a more heavyweight abstraction layer than other frameworks such as LiteLLM, hence some of its code can be legacy.
+
+### Some functionalities of Langchain
+
+`RecursiveCharacterTextSplitter` can be used to create chunks of a document in a hierarchy. In this you can also define `chunck_overlap` argument to make sure chunks are not created by cutting some paragraph into two pieces which detoriorates the meaning in the paragraphs.
+
+We can use `Chroma` object from `Langchain` to create a Chroma database. Chroma is a free open-source database that has SQLite running behind it. Using `from_documents` method and giving it the chunks, embedding model, and database address, you can create and populate your vector database in one line.
+
+You can use `TSNE` to visualize the embeddings in lower spaces, e.g. `2D`.
+
+## Vector databases
+
+There are many options for that; e.g. open-source: Chroma, Qdrant, ..., paid subscriptions: weaviate, pinecone, ... However, since most of the database systems (Postgres, Mango, Elastic, ...) are now supporting vector databases natively, going for paid enterprise solutions is less relevant.
