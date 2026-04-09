@@ -7,6 +7,8 @@ There are several ways to improve the results obtained from an LLM:
 
 Retrieval Augmented Generation (RAG) is another technique that we can use to improve the results. In this we query a database, to find the most relevant info and provide it to the LLM when asking questions.
 
+This simple approach; however, can also cause problems, e.g. change of context while asking consecutive questions may confuse the LLM, chunks not getting the full context. Hence very often solutions to RAG are very hacky.
+
 ## Auto-regressive vs auto-encoding LLM
 
 Auto-regressive LLMs take input tokens and predict a future token from the past.
@@ -30,6 +32,18 @@ Pros and cons of Langchain:
 We can use `Chroma` object from `Langchain` to create a Chroma database. Chroma is a free open-source database that has SQLite running behind it. Using `from_documents` method and giving it the chunks, embedding model, and database address, you can create and populate your vector database in one line.
 
 You can use `TSNE` to visualize the embeddings in lower spaces, e.g. `2D`.
+
+You can use `Chroma` class of `langchain_chroma` to create a fully fledged auto-encoder model:
+
+```python
+from langchain_chroma import Chroma
+vectorstore = Chroma(persist_directory=DB_NAME, embedding_function=embeddings)
+retriever = vectorstore.as_retriever()
+retriever.invoke("Who is Avery?")
+# This provides the corresponding documents with their IDs, metadaa, source (which document they come from originally) and page content.
+```
+
+Then you can combine it with invokation of the LLM, briefly explained in day 3, and create a basic RAG. A better version of that is available at [implementation](./implementation/).
 
 ## Vector databases
 
