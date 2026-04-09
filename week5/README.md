@@ -48,3 +48,30 @@ Then you can combine it with invokation of the LLM, briefly explained in day 3, 
 ## Vector databases
 
 There are many options for that; e.g. open-source: Chroma, Qdrant, ..., paid subscriptions: weaviate, pinecone, ... However, since most of the database systems (Postgres, Mango, Elastic, ...) are now supporting vector databases natively, going for paid enterprise solutions is less relevant.
+
+## Evals
+
+Evalutions are a scientific technique which can help with reassuring that the RAG workflow is working fine. In order to create Evals, you should have the followings ready:
+- An example set of questions with the correct answers identified and reference answers provided.
+- Measure retrieval: MRR (Mean Reciprocal Rank), nDCG (normalized Discounted Cumulative Gain), Recall@K, and Precision@K
+- Measure Answers: you can use LLM-as-a-judge to score provided answers against criteria like accuracy, completeness, and relevance.
+
+### MRR
+
+The following is the formula for **MRR**: the average rank (among chunks you retrieve) at which you can find the correct answer
+
+```
+MRR = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{{rank}_i}
+```
+
+### nDCG
+
+It looks at the distribution of the chunks and measures how likely it is to get the most relevant ones at the first chunks
+
+### Recall@k
+
+Proportion of tests where the relevant context was in the top `k` chunks, or if you have multiple keywords to look for, **keyword coverage** is a similar recall metric, what proportion of your keywords were in the first `k` chunks
+
+### Precision@k
+
+Proportion of the top `k` chunks that are relevant.
