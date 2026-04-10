@@ -39,6 +39,7 @@ You can use the `tiktoken` package for tokenization of text and converting token
 
 Every single prompt we send to an LLM is stateless. We send all the previous messages as well (or possibly a summary of them) to create an illusion of statefullness.
 
+<<<<<<< HEAD
 ## Context window
 
 that is the maximum number of tokens that a model can consider when generating the next token. It includes the original input prompt, subsequent conversation, the latest input prompt, and almost all the output prompt.
@@ -52,6 +53,12 @@ One of the things which is worth knowing is that when you send the same chunk tw
 ## Response format
 
 You can choose the response format to be of type JSON, in the OpenAI APIs:
+=======
+## Enforcing JSON outpu
+
+By use of `response_format={"type": "json_object"}` you can make sure the response format is **JSON**:
+
+>>>>>>> origin/main
 
 ```python
 def select_relevant_links(url):
