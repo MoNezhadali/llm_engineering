@@ -103,3 +103,7 @@ class AnswerEval(BaseModel):
 
 judge_response = completion(model=MODEL, messages=judge_messages, response_format=AnswerEval)
 ```
+
+## Rules of thumb for RAG
+
+- You can use several functionalities of **Langchain**, e.g. MarkdownSplitter if your documents are Markdown, but it does not necessarily work better than just chunk size plus overlap, as it did not in the experiment. The reason can be that if you use headers for split, your chunks can be too large.
