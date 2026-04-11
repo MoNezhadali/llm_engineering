@@ -121,3 +121,189 @@ judge_response = completion(model=MODEL, messages=judge_messages, response_forma
 - Hiearchical: use an LLM to summarize at multiple levels, then when you do RAG lookup do the lookup across the summaries first (to get the coarse-grain information) and then drill down to chunks coming down from fine-grain information
 - Graph RAG: retrieve content closely related to similar documents. It needs specific databases and works well in situations when your data has lots of relations between it. More often than not you can handle this by using metadata propersly.
 - Agentic RAG: use agents for retrieval, combining with memory and tools such as SQL
+
+### Semantic chunking
+
+When you want to do semantic chunking, you can create the required functions as in Week 5, day 5, and then use LiteLLM `completion` with `response_format=Chunks`, where `Chunks` is a pydantic model:
+
+```python
+class Result(BaseModel):
+    page_content: str
+    metadata: dict
+
+
+class Chunk(BaseModel):
+    headline: str = Field(description="A brief heading for this chunk, typically a few words, that is most likely to be surfaced in a query")
+    summary: str = Field(description="A few sentences summarizing the content of this chunk to answer common questions")
+    original_text: str = Field(description="The original text of this chunk from the provided document, exactly as is, not changed in any way")
+
+    def as_result(self, document):
+        metadata = {"source": document["source"], "type": document["type"]}
+        return Result(page_content=self.headline + "\n\n" + self.summary + "\n\n" + self.original_text,metadata=metadata)
+
+
+class Chunks(BaseModel):
+    chunks: list[Chunk]
+
+
+# And later you define the completions
+response = completion(model=MODEL, messages=messages, response_format=Chunks)
+# NOTE: Chunks is list of Chunk, it means LLMs can handle rather complicated formats
+```
+
+#### Some python note
+
+You can use `tqdm` to get a progress bar, while running over a list:
+
+```python
+def create_chunks(documents):
+    chunks = []
+    # NOTE: Here we use tqdm to get progress bar while running the code.
+    for doc in tqdm(documents):
+        chunks.extend(process_document(doc))
+    return chunks
+```
+
+### Reranking
+
+You can ask an LLM to rerank the chunks received:
+
+```python
+class RankOrder(BaseModel):
+    order: list[int] = Field(
+        description="The order of relevance of chunks, from most relevant to least relevant, by chunk id number"
+    )
+
+
+def rerank(question, chunks):
+    system_prompt = """
+You are a document re-ranker.
+You are provided with a question and a list of relevant chunks of text from a query of a knowledge base.
+The chunks are provided in the order they were retrieved; this should be approximately ordered by relevance, but you may be able to improve on that.
+You must rank order the provided chunks by relevance to the question, with the most relevant chunk first.
+Reply only with the list of ranked chunk ids, nothing else. Include all the chunk ids you are provided with, reranked.
+"""
+    user_prompt = f"The user has asked the following question:\n\n{question}\n\nOrder all the chunks of text by relevance to the question, from most relevant to least relevant. Include all the chunk ids you are provided with, reranked.\n\n"
+    user_prompt += "Here are the chunks:\n\n"
+    for index, chunk in enumerate(chunks):
+        user_prompt += f"# CHUNK ID: {index + 1}:\n\n{chunk.page_content}\n\n"
+    user_prompt += "Reply only with the list of ranked chunk ids, nothing else."
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+    response = completion(model=MODEL, messages=messages, response_format=RankOrder)
+    reply = response.choices[0].message.content
+    order = RankOrder.model_validate_json(reply).order
+    print(order)
+    return [chunks[i - 1] for i in order]
+```
+
+### Improving system prompt
+
+Apparently AI performs better when it is made known to it that it's results are evaluted against certian metrics; hence it makes sense to make that known in the system prompt.
+
+```python
+SYSTEM_PROMPT = """
+You are a knowledgeable, friendly assistant representing the company Insurellm.
+You are chatting with a user about Insurellm.
+Your answer will be evaluated for accuracy, relevance and completeness, so make sure it only answers the question and fully answers it.
+If you don't know the answer, say so.
+For context, here are specific extracts from the Knowledge Base that might be directly relevant to the user's question:
+{context}
+With this context, please answer the user's question. Be accurate, relevant and complete.
+"""
+
+# NOTE: it uses context without fstring and later uses .format method
+system_prompt = SYSTEM_PROMPT.format(context=context)
+```
+
+### Querey rewriting
+
+```python
+def rewrite_query(question, history=[]):
+    """Rewrite the user's question to be a more specific question that is more likely to surface relevant content in the Knowledge Base."""
+    message = f"""
+You are in a conversation with a user, answering questions about the company Insurellm.
+You are about to look up information in a Knowledge Base to answer the user's question.
+
+This is the history of your conversation so far with the user:
+{history}
+
+And this is the user's current question:
+{question}
+
+Respond only with a single, refined question that you will use to search the Knowledge Base.
+It should be a VERY short specific question most likely to surface content. Focus on the question details.
+Don't mention the company name unless it's a general question about the company.
+IMPORTANT: Respond ONLY with the knowledgebase query, nothing else.
+"""
+    response = completion(model=MODEL, messages=[{"role": "system", "content": message}])
+    return response.choices[0].message.content
+
+# NOTE: At the end you add that IMPORTANT note to avoid the LLM to come up with more bullshit.
+# NOTE: a sentence is added to the rewrite_querey method which says don't mention company name
+# This shows how hacky rewriting can become worse, sometimes!
+# NOTE: One possible improvement is to do query expansion, e.g. sending both rewritten and
+# original question which comes next!
+```
+
+### Query expansion
+
+As an example of this you can send both original and rewriten qestions to the LLM
+
+```python
+def merge_chunks(chunks, reranked):
+    merged = chunks[:]
+    existing = [chunk.page_content for chunk in chunks]
+    for chunk in reranked:
+        if chunk.page_content not in existing:
+            merged.append(chunk)
+    return merged
+
+def fetch_context(original_question):
+    rewritten_question = rewrite_query(original_question)
+    chunks1 = fetch_context_unranked(original_question)
+    chunks2 = fetch_context_unranked(rewritten_question)
+    # NOTE: there is of course a better pythonic way of doing this merge!
+    chunks = merge_chunks(chunks1, chunks2)
+    # NOTE: we rerank based on the original question
+    reranked = rerank(original_question, chunks)
+    return reranked[:FINAL_K]
+```
+
+#### Note on tenacity
+
+It is a good utility that you can use for example for retrying after some backoff if you get exceptions. That can happen when you get **rate limit error**.
+
+```python
+from tenacity import retry, wait_exponential
+
+wait = wait_exponential(multiplier=1, min=10, max=240)
+
+@retry(wait=wait)
+def process_document(document):
+    messages = make_messages(document)
+    response = completion(model=MODEL, messages=messages, response_format=Chunks)
+    reply = response.choices[0].message.content
+    doc_as_chunks = Chunks.model_validate_json(reply).chunks
+    return [chunk.as_result(document) for chunk in doc_as_chunks]
+```
+
+#### Note on multi-processing
+
+You can also use multi-processing to improve the process speed, but maybe you get **rate limit error**:
+
+```python
+def create_chunks(documents):
+    """
+    Create chunks using a number of workers in parallel.
+    If you get a rate limit error, set the WORKERS to 1.
+    """
+    chunks = []
+    # NOTE: you can also use `concurrent` or `async`
+    with Pool(processes=WORKERS) as pool:
+        for result in tqdm(pool.imap_unordered(process_document, documents), total=len(documents)):
+            chunks.extend(result)
+    return chunks
+```
