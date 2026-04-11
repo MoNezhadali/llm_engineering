@@ -108,3 +108,16 @@ judge_response = completion(model=MODEL, messages=judge_messages, response_forma
 
 - You can use several functionalities of **Langchain**, e.g. MarkdownSplitter if your documents are Markdown, but it does not necessarily work better than just chunk size plus overlap, as it did not in the experiment. The reason can be that if you use headers for split, your chunks can be too large.
 - Running Evals shows that simply changing a better encoder can improve the results. One way to see what one wins/loses is to use several expensive models to see the best it gets and then optimize the objective functions, e.g. based on Week 5, day 4.
+
+### Techniques for improving RAG
+
+- Chunking R&D: experiment with chunking strategy
+- Encoder R&D: select the best encoder model based on a test set
+- Improve Prompts: genral content, the current date, relevant context and history
+- Document pre-processing: use an LLM to make the chunks and/or text for encoding. You can also do semantic chunking (maybe part of chunking R&D). You can also send a table to an LLM and tell it create meaningful chunks so that I can use it later as knowledge base.
+- Query rewriting: Use an LLM to convert the user's question to a RAG query.
+- Query expansion: use an LLM to turn the question into multiple RAG queries.
+- Re-ranking: use an LLM to sub-select from RAG results. You have obtained `n*k` prompts, you can ask an LLM to pick the most relevant ones. Specially if the chunks are going back and forth several times as context for the LLM answering the quesitons, it can help a lot with removing the unnecessary stuff and avoiding comtamination.
+- Hiearchical: use an LLM to summarize at multiple levels, then when you do RAG lookup do the lookup across the summaries first (to get the coarse-grain information) and then drill down to chunks coming down from fine-grain information
+- Graph RAG: retrieve content closely related to similar documents. It needs specific databases and works well in situations when your data has lots of relations between it. More often than not you can handle this by using metadata propersly.
+- Agentic RAG: use agents for retrieval, combining with memory and tools such as SQL
