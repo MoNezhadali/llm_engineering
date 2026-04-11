@@ -107,3 +107,4 @@ judge_response = completion(model=MODEL, messages=judge_messages, response_forma
 ## Rules of thumb for RAG
 
 - You can use several functionalities of **Langchain**, e.g. MarkdownSplitter if your documents are Markdown, but it does not necessarily work better than just chunk size plus overlap, as it did not in the experiment. The reason can be that if you use headers for split, your chunks can be too large.
+- Running Evals shows that simply changing a better encoder can improve the results. One way to see what one wins/loses is to use several expensive models to see the best it gets and then optimize the objective functions, e.g. based on Week 5, day 4.
