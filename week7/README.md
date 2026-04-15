@@ -216,3 +216,19 @@ Base models get a chunk of text and predict the next token. They expect `prompt`
 OpenAI came up with the idea of creating the `system` prompt, `user` prompt, `assistant` prompt, chat-style type of input and output, and as a result it became really good at answering rather than just predicting the text.
 
 In the case of price-prediction, we could try either of the two types, but since the instructions do not really matter the problem is rather clear, we choose the base model.
+
+## Five important hyper-parameters for QLoRA
+
+- Target modules: e.g. attention layers, or adding other layers
+- rank (`r`): number of dimensions of the LoRA matrices
+- Alpha: After multiplying `lora_a` and `lora_b` how much you scale it before adding it to the base model. It's normally `2*r`
+- Quantization: How much you reduce the precision of the base model
+- Dropout: randomly droping out a some of the caluculations in the neurons (e.g. `10` or `20` percent) to make sure the neural net generalizes well and does not overfit the data. Doing so, if the neural network wants to perform well, it has to adjust its parameters everywhere, not only in a very specific area.
+
+## Five important hyper-parameters for Training
+
+- Epochs: how many complete passes the learning algorithm makes over the full training dataset. It makes sence to have epochs greater than zero since at every step you learn a little bit, and you have batches, so it moves in the collective direction (not all the info in one specific input is learned)
+- Batch size: how many of these data points are put in a training batch, rule of thumb is to fit as big batch size as it can fit in your GPU (normally powers of `2`, lol), but remember the larger your batch size, the more approximate your correction will be (corrections may cancel out each other), but it is not necessarily bad.
+- Learning rate: how big of a step you take in each step of training. You start with `0.0001`, this one is noramlly a power of `10`. There are some **learning rate schedulers** which can adjust your learning rate based on where you are.
+- Gradient Accumulation: in the back propagate, you compute gradients, you can process multiple smaller batches (micro-batches), accumulate (sum) gradients across them, only update weights after several steps.
+- Optimzer: you can do the simplest option (stochastic gradient decent, SGD), or the most popular (Adaptive Moment Estimation, Adam)
