@@ -171,3 +171,48 @@ PeftModelForCausalLM(
 ```
 
 As you see each of the self attention layers has `lora_A (3072 * 32)` and `lora_B (32 * 3072)`, so `lora_A * lora_B` is a low rank matrix which shrinks the `3072` dimension space into `32` dimensions and brings it back to `3072` dimensions.
+
+## Token count cut-off
+
+When you fun fun-tuning, you have to set up in advance what is the maximum number of tokens in any of the training data. Because it has to prepare itself for that scenario. The amount of memory in the GPU is linearly proportional to the maximum number of tokens. So you should check your fine-tuning data and set a cut-off! If you do not do it, all the shorter sequences are padded with a special token and since there will be very many of those padded character, it will drastically slow down the fine-tuning process!
+
+```python
+token_counts = [item.count_tokens(tokenizer) for item in tqdm(items)]
+CUTOFF = 110
+cut = len([count for count in token_counts if count > CUTOFF])
+# NOTE: You normally do not get rid of the fine-tuning data, you just truncate the long ones.
+```
+
+## Some note on training for prices
+
+When you want to train for some quantity, it is best to help the model not to get busy with the details after some point, e.g. cents do not matter but the model will try to predict them, and that triviality can confuse the model, since it is trying to get the number of cents right as much as it is trying to predict the dollars right. Remember we are asking an NLP (predictor of the next token) to solve something numeric!
+
+Note: you should calculate this max number and give it HuggingFace before fine-tuning!
+
+Note: All three digit-numbers are mapped to one token in lamma, unlike some other model. So it makes it suitable for predicting the price of an item under `$1000`! It basically solves a classification problem. I, personally, think it would still work if it were more (It may even be more appropriate predicting units, tens, hundreds, ...)!
+
+## Format
+
+If you check the `Item` class from the `pricer` module:
+
+```python
+class Item(BaseModel)
+    ...
+    def to_datapoint(self) -> dict:
+        return {"prompt": self.prompt, "completion": self.completion}
+```
+
+You see that the columns of the dataset are chosen to be `prompt` and `completion`, these are exactly what `HuggingFace` expects.
+
+### Important Note
+
+There are two types of LLM model:
+- Base models (`meta-llama/Llama-3.2-3B`)
+- Chat models (`meta-llama/Llama-3.2-3B-instruct`)
+- Actually there is a third type as well: thinking or reasoning models
+
+Base models get a chunk of text and predict the next token. They expect `prompt` and `completion`.
+
+OpenAI came up with the idea of creating the `system` prompt, `user` prompt, `assistant` prompt, chat-style type of input and output, and as a result it became really good at answering rather than just predicting the text.
+
+In the case of price-prediction, we could try either of the two types, but since the instructions do not really matter the problem is rather clear, we choose the base model.
