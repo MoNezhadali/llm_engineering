@@ -232,3 +232,135 @@ In the case of price-prediction, we could try either of the two types, but since
 - Learning rate: how big of a step you take in each step of training. You start with `0.0001`, this one is noramlly a power of `10`. There are some **learning rate schedulers** which can adjust your learning rate based on where you are.
 - Gradient Accumulation: in the back propagate, you compute gradients, you can process multiple smaller batches (micro-batches), accumulate (sum) gradients across them, only update weights after several steps.
 - Optimzer: you can do the simplest option (stochastic gradient decent, SGD), or the most popular (Adaptive Moment Estimation, Adam)
+
+## Weight and Biases (`wandb`)
+
+`wandb` is a free ML tool for tracking, visualizing, and managing experiments
+
+## Hyper parameters for the experiment
+
+```python
+# Constants
+
+BASE_MODEL = "meta-llama/Llama-3.2-3B"
+PROJECT_NAME = "price"
+HF_USER = "ed-donner" # your HF name here!
+
+LITE_MODE = True
+
+DATA_USER = "ed-donner"
+DATASET_NAME = f"{DATA_USER}/items_prompts_lite" if LITE_MODE else f"{DATA_USER}/items_prompts_full"
+
+RUN_NAME =  f"{datetime.now():%Y-%m-%d_%H.%M.%S}"
+if LITE_MODE:
+  RUN_NAME += "-lite"
+PROJECT_RUN_NAME = f"{PROJECT_NAME}-{RUN_NAME}"
+HUB_MODEL_NAME = f"{HF_USER}/{PROJECT_RUN_NAME}"
+
+# Hyper-parameters - overall
+
+EPOCHS = 1 if LITE_MODE else 3
+BATCH_SIZE = 32 if LITE_MODE else 256
+MAX_SEQUENCE_LENGTH = 128
+GRADIENT_ACCUMULATION_STEPS = 1
+
+# Hyper-parameters - QLoRA
+
+QUANT_4_BIT = True
+LORA_R = 32 if LITE_MODE else 256
+LORA_ALPHA = LORA_R * 2
+ATTENTION_LAYERS = ["q_proj", "v_proj", "k_proj", "o_proj"]
+MLP_LAYERS = ["gate_proj", "up_proj", "down_proj"]
+TARGET_MODULES = ATTENTION_LAYERS if LITE_MODE else ATTENTION_LAYERS + MLP_LAYERS
+LORA_DROPOUT = 0.1
+
+# Hyper-parameters - training
+
+LEARNING_RATE = 1e-4
+WARMUP_RATIO = 0.01
+LR_SCHEDULER_TYPE = 'cosine'
+WEIGHT_DECAY = 0.001
+OPTIMIZER = "paged_adamw_32bit"
+
+capability = torch.cuda.get_device_capability()
+use_bf16 = capability[0] >= 8
+
+# Tracking
+
+VAL_SIZE = 500 if LITE_MODE else 1000
+LOG_STEPS = 5 if LITE_MODE else 10
+SAVE_STEPS = 100 if LITE_MODE else 200
+LOG_TO_WANDB = True
+```
+
+Then you can run your experiment:
+
+```python
+# pick the right quantization
+quant_config = BitsAndBytesConfig(
+  load_in_4bit=True,
+  bnb_4bit_use_double_quant=True,
+  bnb_4bit_compute_dtype=torch.bfloat16 if use_bf16 else torch.float16,
+  bnb_4bit_quant_type="nf4"
+)
+# Load the Tokenizer and the Model
+tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side = "right"
+
+base_model = AutoModelForCausalLM.from_pretrained(
+    BASE_MODEL,
+    quantization_config=quant_config,
+    device_map="auto",
+)
+base_model.generation_config.pad_token_id = tokenizer.pad_token_id
+# LoRA Parameters
+lora_parameters = LoraConfig(
+    lora_alpha=LORA_ALPHA,
+    lora_dropout=LORA_DROPOUT,
+    r=LORA_R,
+    bias="none",
+    task_type="CAUSAL_LM",
+    target_modules=TARGET_MODULES,
+)
+# Training parameters
+train_parameters = SFTConfig(
+    output_dir=PROJECT_RUN_NAME,
+    num_train_epochs=EPOCHS,
+    per_device_train_batch_size=BATCH_SIZE,
+    per_device_eval_batch_size=1,
+    gradient_accumulation_steps=GRADIENT_ACCUMULATION_STEPS,
+    optim=OPTIMIZER,
+    save_steps=SAVE_STEPS,
+    save_total_limit=10,
+    logging_steps=LOG_STEPS,
+    learning_rate=LEARNING_RATE,
+    weight_decay=0.001,
+    fp16=not use_bf16,
+    bf16=use_bf16,
+    max_grad_norm=0.3,
+    max_steps=-1,
+    warmup_ratio=WARMUP_RATIO,
+    group_by_length=True,
+    lr_scheduler_type=LR_SCHEDULER_TYPE,
+    report_to="wandb" if LOG_TO_WANDB else None,
+    run_name=RUN_NAME,
+    max_length=MAX_SEQUENCE_LENGTH,
+    save_strategy="steps",
+    hub_strategy="every_save",
+    push_to_hub=True,
+    hub_model_id=HUB_MODEL_NAME,
+    hub_private_repo=True,
+    eval_strategy="steps",
+    eval_steps=SAVE_STEPS
+)
+# Define fine-tuning experiment
+fine_tuning = SFTTrainer(
+    model=base_model,
+    train_dataset=train,
+    eval_dataset=val,
+    peft_config=lora_parameters,
+    args=train_parameters
+)
+# NOTE: This SFT trainer does all the training and reports to weights and biases platform
+```
