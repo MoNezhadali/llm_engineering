@@ -364,3 +364,28 @@ fine_tuning = SFTTrainer(
 )
 # NOTE: This SFT trainer does all the training and reports to weights and biases platform
 ```
+
+### Stopping a run in Colab
+
+If you stop a run in Colab, still there will be saved in HuggingFace. So instead of running over 800K data points, you can run is for 100K and see the results! In general makes sense, that one saves the results regularly during training, so see the progress live, and also be felxible with stops if it makes sense to do so.
+
+### Some notes on training
+
+- The training curve looks smoother when there are larger batch sizes.
+- If you set up large epochs, the training scheduler applies to the entire training, not each epoch!
+- When there are several epochs, you can see in the training loss curve that there are several jumps, happening because the model has seen the exact same data before and been trained by it. However, if there is a huge jump that's not good news, maybe sign of overfitting!
+- Note that HuggingFace is just a git repository! Meaning that you can go to HuggingFace and browse `date_of_the_day_hyper_parameters_or_anything` and pick the run (commit) at `6200`th step!
+- NOTE: the loss that was used for this experiment was not any measure of the difference between the actual price and prediction, but `-log(P(true value))`! This function also works very well with **BackProp** algorithm for calculating derivatives! That why it is a good choice! It is called **cross-entropy loss**! It works perfectly fine with classification problems including this one!
+
+### Cross-entropy loss
+
+This is cross-entropy loss:
+```python
+loss = - log(P(true_value))
+```
+
+## The final fin-tuned model
+
+It is `2.2 GB` for the Llama quantized model and around `1.5 GB` for all the fine-tuning parameters affecting both `attention` layers, and `mlp` layers! And it performed better than all models, including the best frontier models!
+
+![Final Result](final_result.png)
