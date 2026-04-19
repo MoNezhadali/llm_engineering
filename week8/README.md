@@ -1,5 +1,7 @@
 # Notes on Week 8
 
+## Agents to be created
+
 Here are the list of agents we create
 - Scanner agent: An agen subscribing to the RSS feeds and identifying good bargains
 - Ensemble agent: estimates prices using multiple models
@@ -7,6 +9,11 @@ Here are the list of agents we create
 - Planning agent: coordinates activities
 - The agent framework; with memory and logging
 - The UI; using Gradio
+
+### IMPORTANT NOTE
+
+The agents are developed in [Agents folder](./agents/). Go through them for any question you have!
+Also look at `deal_agent_framework.py`, it adds persistence and memory to the agent! For the `UI` you can check `price_is_right.py`
 
 ## Modal
 
@@ -75,6 +82,9 @@ You can check Week 8 Day 1 for how to create a service for the specialist agent 
 Here is how you create a vector database and add metadata to it:
 
 ```python
+# NOTE: Define a free and fast encoder which can be run locally
+encoder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
 # Check if the collection exists; if not, create it
 
 collection_name = "products"
@@ -156,3 +166,119 @@ results = response.choices[0].message.parsed
 ## Pushing notifications to your phone
 
 If you want to send notifications to your own phone, you can register in a platfrom like `Pushover.net` get your `PUSHOVER_USER` and `PUSHOVER_TOKEN` and then send `post` requests to them with your message and credentials!
+
+## Hallmarks of an agentic AI solution
+
+- Breaking a larger problem into smaller steps carried out by individual processes
+- Using tools/funcion calling/structured outputs
+- An agent environment in which agents can collaborate
+- A planning agent that coordinates activities
+- Autonomy and memory - existing beyond a chat with a human
+
+## Use of tools
+
+You should create tool description JSON objects:
+
+```python
+# NOTE: If you use an agent framework, it creates these JSON objects for you!
+scan_function = {
+        "name": "scan_the_internet_for_bargains",
+        "description": "Returns top bargains scraped from the internet along with the price each item is being offered for",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": False
+        }
+    }
+
+estimate_function = {
+    "name": "estimate_true_value",
+    "description": "Given the description of an item, estimate how much it is actually worth",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "description": {
+                "type": "string",
+                "description": "The description of the item to be estimated"
+            },
+        },
+        "required": ["description"],
+        "additionalProperties": False
+    }
+}
+
+notify_function = {
+    "name": "notify_user_of_deal",
+    "description": "Send the user a push notification about the single most compelling deal; only call this one time",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "description": {
+                "type": "string",
+                "description": "The description of the item itself scraped from the internet"
+            },
+            "deal_price": {
+                "type": "number",
+                "description": "The price offered by this deal scraped from the internet"
+            }
+            ,
+            "estimated_true_value": {
+                "type": "number",
+                "description": "The estimated actual value that this is worth"
+            }
+            ,
+            "url": {
+                "type": "string",
+                "description": "The URL of this deal as scraped from the internet"
+            }
+        },
+        "required": ["description", "deal_price", "estimated_true_value", "url"],
+        "additionalProperties": False
+    }
+}
+```
+
+Afterwards, you will append all the results from tool calls to the results with `{"role": "tool", "content": json.dumps(result), "tool_call_id": tool_call.id}`:
+
+```python
+def handle_tool_call(message):
+    """
+    Actually call the tools associated with this message
+    """
+    results = []
+    for tool_call in message.tool_calls:
+        tool_name = tool_call.function.name
+        arguments = json.loads(tool_call.function.arguments)
+        tool = globals().get(tool_name)
+        result = tool(**arguments) if tool else {}
+        results.append({"role": "tool","content": json.dumps(result),"tool_call_id": tool_call.id})
+    return results
+```
+
+Then you can run a loop like this to make sure the agent does what you want:
+
+```python
+system_message = "You find great deals on bargain products using your tools, and notify the user of the best bargain."
+user_message = """
+First, use your tool to scan the internet for bargain deals. Then for each deal, use your tool to estimate its true value.
+Then pick the single most compelling deal where the price is much lower than the estimated true value, and use your tool to notify the user.
+Then just reply OK to indicate success.
+"""
+messages = [{"role": "system", "content": system_message},{"role": "user", "content": user_message}]
+
+# NOTE: Here we create the loop
+done = False
+while not done:
+    response = openai.chat.completions.create(model=MODEL, messages=messages, tools=tools)
+    if response.choices[0].finish_reason=="tool_calls":
+        message = response.choices[0].message
+        results = handle_tool_call(message)
+        messages.append(message)
+        messages.extend(results)
+    else:
+        done = True
+response.choices[0].message.content
+```
+
+You can find the better implementaiton in [Autonomous Agent](./agents/autonomous_planning_agent.py)
